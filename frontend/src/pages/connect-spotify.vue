@@ -36,7 +36,9 @@
         // Store token in localStorage
         localStorage.setItem('spotify_token', data.token.access_token)
         localStorage.setItem('spotify_refresh_token', data.token.refresh_token)
-        localStorage.setItem('spotify_expires_at', String(Date.now() + data.token.expires_in * 1000))
+        localStorage.setItem('spotify_expires_at', data.token.expires_in.toString())
+        localStorage.setItem('spotify_token_type', data.token.token_type)
+
         
         router.push('/home')
       } else {

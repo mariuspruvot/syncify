@@ -47,7 +47,7 @@
           </div>
           <div class="collapse-content">
             <ul class="space-y-2">
-              <li v-for="track in queue.slice(0, 3)" :key="track.id" class="flex items-center gap-2">
+              <li v-for="track in queue.slice(0, 4)" :key="track.id" class="flex items-center gap-2">
                 <img 
                   :src="track.album.images[track.album.images.length - 1].url" 
                   :alt="track.name"
