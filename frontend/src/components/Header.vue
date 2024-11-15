@@ -1,7 +1,7 @@
 <template>
   <div class="navbar bg-base-100">
     <div class="flex-1">
-      <NuxtLink class="btn btn-ghost text-xl" to="/">Syncify</NuxtLink>
+      <NuxtLink class="hover:text-spotify-green btn btn-ghost text-xl" to="/">Syncify</NuxtLink>
     </div>
     <div class="flex-none">
       <ul class="menu menu-horizontal p-0">

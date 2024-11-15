@@ -13,9 +13,11 @@
     "@nuxtjs/tailwindcss": "^6.12.2",
     "nuxt": "^3.14.159",
     "vue": "latest",
-    "vue-router": "latest"
+    "vue-router": "^4.4.5"
   },
   "devDependencies": {
+    "@nuxt/types": "^2.18.1",
+    "@nuxtjs/toast": "^3.3.1",
     "autoprefixer": "^10.4.20",
     "daisyui": "^4.12.14",
     "postcss": "^8.4.49",
