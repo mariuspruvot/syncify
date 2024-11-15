@@ -17,24 +17,18 @@ class ExternalUrls(BaseModel):
     spotify: str
 
 
-class Followers(BaseModel):
-    href: str
-    total: int
-
-
 class Image(BaseModel):
     url: str
     height: int
     width: int
 
 
-class User(BaseModel):
+class SpotifyUser(BaseModel):
     country: Optional[str] = None
     display_name: Optional[str] = None
     email: Optional[str] = None
     explicit_content: Optional[ExplicitContent] = None
     external_urls: Optional[ExternalUrls] = None
-    followers: Optional[Followers] = None
     href: Optional[str] = None
     id: Optional[str] = None
     images: Optional[list[Image]] = None

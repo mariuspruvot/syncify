@@ -23,12 +23,12 @@ class SpotifyAuth:
             "client_id": self.client_id,
             "response_type": "code",
             "redirect_uri": self.redirect_uri,
-            "scope": "user-read-playback-state user-modify-playback-state user-read-private",
+            "scope": "streaming user-read-playback-state user-modify-playback-state user-read-private",
             "show_dialog": "true",
         }
         return f"{self.authorization_url}?{urlencode(params)}"
 
-    def retrieve_token(self, authorization_code: str):
+    def retrieve_token(self, authorization_code: str) -> SpotifyToken:
         """
         Extracts the access token from the authorization code.
         """
@@ -48,24 +48,14 @@ class SpotifyAuth:
             response.raise_for_status()
             response_data = response.json()
 
-            self._update_tokens(response_data)
+            return self._update_tokens(response_data)
 
         except httpx.HTTPStatusError as err:
             raise SpotifyAuthenticationException(f"Failed to retrieve token: {err}")
         except httpx.RequestError as err:
             raise SpotifyAuthenticationException(f"Failed to retrieve token: {err}")
 
-    def get_token(self) -> str:
-        """
-        Returns the access token.
-        """
-        if not self.token.access_token:
-            raise ValueError(
-                "Access token is not set. Retrieve or refresh the token first."
-            )
-        return self.token.access_token
-
-    def refresh_token(self):
+    def refresh_token(self) -> SpotifyToken:
         """
         Updates the access token using the refresh token.
         """
@@ -83,7 +73,7 @@ class SpotifyAuth:
             response.raise_for_status()
             response_data = response.json()
 
-            self._update_tokens(response_data)
+            return self._update_tokens(response_data)
 
         except httpx.HTTPStatusError as err:
             raise SpotifyAuthenticationException(f"Failed to refresh token: {err}")
@@ -92,3 +82,4 @@ class SpotifyAuth:
 
     def _update_tokens(self, response_data: dict):
         self.token = SpotifyToken(**response_data)
+        return self.token

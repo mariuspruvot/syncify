@@ -6,6 +6,7 @@ import uvicorn
 
 from backend.routes.spotify import spotify_router
 from backend.settings.logging import logger
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -27,6 +28,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(spotify_router, prefix="/spotify")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_origin_regex=None,
+    expose_headers=["*"],
+    max_age=600,
+)
 
 
 ### Main HEALTH CHECK ###
