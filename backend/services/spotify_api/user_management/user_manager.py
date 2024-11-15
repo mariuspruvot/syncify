@@ -10,7 +10,7 @@ logger = logging.getLogger("USER MANAGER")
 class UserManager:
     def __init__(self, token: str):
         self.token = token
-        self.user_url = GLOBAL_SETTINGS.SPOTIFY_BASE_URL + "v1/users/"
+        self.user_url = GLOBAL_SETTINGS.SPOTIFY_BASE_URL + "v1/"
 
     async def get_current_user(self) -> SpotifyUser:
         """
@@ -44,7 +44,7 @@ class UserManager:
             "Authorization": f"Bearer {self.token}",
         }
         try:
-            response = httpx.get(self.user_url + user_id, headers=headers)
+            response = httpx.get(self.user_url + "users/" + user_id, headers=headers)
             response.raise_for_status()
             return SpotifyUser(**response.json())
         except httpx.HTTPStatusError as err:
