@@ -8,6 +8,8 @@ from backend.routes.spotify import spotify_router
 from backend.settings.logging import logger
 from fastapi.middleware.cors import CORSMiddleware
 
+from backend.routes.users import users_router
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -28,6 +30,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(spotify_router, prefix="/spotify")
+app.include_router(users_router, prefix="/users")
 
 app.add_middleware(
     CORSMiddleware,

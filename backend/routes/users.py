@@ -1,10 +1,16 @@
 from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
+from backend.factory.user_factory import UserFactory
 from backend.repositories.user_repository import UserRepository
 from backend.models.users import User
 from backend.schemas.users import UserCreate, UserUpdate, UserList, UserResponse
 from backend.config.database import SessionLocal, get_db
+import logging
+
+from backend.utils.validation.users import UserValidator
+
+logger = logging.getLogger("USERS")
 
 users_router = APIRouter()
 
@@ -24,20 +30,25 @@ def create_user(
     Creates a new user.
     """
     try:
+        user_validator = UserValidator(UserRepository(db))
+        user_validator.validate(user)
+
         user_repository = UserRepository(db)
         existing_user = user_repository.get_by_email(user.email)
+
         if existing_user:
             raise HTTPException(status_code=400, detail="Email already registered")
+        return UserFactory.from_db(user_repository.create(user))
 
-        created_user = user_repository.create(user)
-        return UserResponse(**created_user.dict())
     except HTTPException as he:
         raise he
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@users_router.get("/users", tags=["users"], status_code=200, response_model=UserList)
+@users_router.get("/", tags=["users"], status_code=200, response_model=UserList)
 def get_users(
     db: Annotated[SessionLocal, Depends(get_db)],
     limit: int = 10,
@@ -50,26 +61,28 @@ def get_users(
         user_repository = UserRepository(db)
         users = user_repository.list(limit, offset)
         total = db.query(User).count()
-        return UserList(total=total, users=users)
+        users_response = [UserFactory.from_db(user) for user in users]
+        return UserList(total=total, users=users_response)
     except Exception as e:
+        logger.error(f"Error getting users: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @users_router.get(
-    "/users/{user_id}", tags=["users"], status_code=200, response_model=UserResponse
+    "/{user_name}", tags=["users"], status_code=200, response_model=UserResponse
 )
 def get_user(
-    user_id: str, db: Annotated[SessionLocal, Depends(get_db)]
+    user_name: str, db: Annotated[SessionLocal, Depends(get_db)]
 ) -> UserResponse:
     """
     Gets a specific user by ID.
     """
     try:
         user_repository = UserRepository(db)
-        user = user_repository.get(user_id)
+        user = user_repository.get_by_display_name(user_name)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return user
+        return UserFactory.from_db(user)
     except HTTPException as he:
         raise he
     except Exception as e:
@@ -77,7 +90,7 @@ def get_user(
 
 
 @users_router.patch(
-    "/users/{user_id}", tags=["users"], status_code=200, response_model=UserResponse
+    "/{user_id}", tags=["users"], status_code=200, response_model=UserResponse
 )
 def update_user(
     user_id: str, user: UserUpdate, db: Annotated[SessionLocal, Depends(get_db)]
@@ -87,7 +100,6 @@ def update_user(
     """
     try:
         user_repository = UserRepository(db)
-        # Vérifier si l'email est modifié et s'il existe déjà
         if user.email:
             existing_user = user_repository.get_by_email(user.email)
             if existing_user and existing_user.id != user_id:
@@ -96,14 +108,14 @@ def update_user(
         updated_user = user_repository.update(user_id, user)
         if not updated_user:
             raise HTTPException(status_code=404, detail="User not found")
-        return updated_user
+        return UserFactory.from_db(updated_user)
     except HTTPException as he:
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@users_router.delete("/users/{user_id}", tags=["users"], status_code=204)
+@users_router.delete("/{user_id}", tags=["users"], status_code=204)
 def delete_user(user_id: str, db: Annotated[SessionLocal, Depends(get_db)]):
     """
     Deletes an existing user.
@@ -121,9 +133,7 @@ def delete_user(user_id: str, db: Annotated[SessionLocal, Depends(get_db)]):
 
 
 # Routes pour les amis
-@users_router.post(
-    "/users/{user_id}/friends/{friend_id}", tags=["users"], status_code=204
-)
+@users_router.post("/{user_id}/friends/{friend_id}", tags=["users"], status_code=204)
 def add_friend(
     user_id: str, friend_id: str, db: Annotated[SessionLocal, Depends(get_db)]
 ):
@@ -148,9 +158,7 @@ def add_friend(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@users_router.delete(
-    "/users/{user_id}/friends/{friend_id}", tags=["users"], status_code=204
-)
+@users_router.delete("/{user_id}/friends/{friend_id}", tags=["users"], status_code=204)
 def remove_friend(
     user_id: str, friend_id: str, db: Annotated[SessionLocal, Depends(get_db)]
 ):

@@ -4,15 +4,16 @@ from datetime import datetime
 
 
 class UserBase(BaseModel):
-    display_name: str = Field(..., min_length=2, max_length=50)
-    country: Optional[str] = Field(None, max_length=2)
+    display_name: str | None = Field(None, min_length=2, max_length=50)
+    country: str | None = Field(None, max_length=2)
     email: EmailStr = Field(
         ...,
         description="Valid email is required",
     )
-    avatar: Optional[str] = None
+    avatar: str | None = None
+    spotify_id: str | None = None
     is_online: bool = False
-    currently_playing: Optional[str] = None
+    currently_playing: str | None = None
 
     @classmethod
     @field_validator("email")
@@ -25,23 +26,30 @@ class UserBase(BaseModel):
     @field_validator("display_name")
     def name_must_be_valid(cls, v):
         if not v.strip():
-            raise ValueError("Le nom ne peut pas être vide")
+            raise ValueError("Name cannot be empty")
         return v.strip()
+
+    @classmethod
+    @field_validator("display_name")
+    def name_must_be_unique(cls, v, values):
+        if v and v.strip() in [user.display_name for user in values]:
+            raise ValueError("Name already in use")
+        return v
 
 
 class UserCreate(UserBase):
-    spotify_id: str = Field(..., min_length=5)
+    spotify_id: str | None = Field(None, min_length=5)
     password: str = Field(..., min_length=8, max_length=50)
 
     @classmethod
     @field_validator("password")
     def password_must_be_strong(cls, v):
         if not any(c.isupper() for c in v):
-            raise ValueError("Le mot de passe doit contenir au moins une majuscule")
+            raise ValueError("Password must contain at least one uppercase letter")
         if not any(c.islower() for c in v):
-            raise ValueError("Le mot de passe doit contenir au moins une minuscule")
+            raise ValueError("Password must contain at least one lowercase letter")
         if not any(c.isdigit() for c in v):
-            raise ValueError("Le mot de passe doit contenir au moins un chiffre")
+            raise ValueError("Password must contain at least one digit")
         return v
 
 
@@ -54,15 +62,9 @@ class UserUpdate(BaseModel):
 
 
 class UserResponse(UserBase):
-    pass
-
-
-class User(UserBase):
-    id: str
-    spotify_id: str
-    friends: List["User"] = []
-    created_at: datetime
-    updated_at: Optional[datetime] = None
+    id: str | None = None
+    spotify_id: str | None = None
+    friends: List["UserResponse"] | None = None
 
     class Config:
         orm_mode = True
@@ -70,7 +72,7 @@ class User(UserBase):
 
 class UserList(BaseModel):
     total: int
-    users: List[User]
+    users: list[UserResponse]
 
     class Config:
         orm_mode = True

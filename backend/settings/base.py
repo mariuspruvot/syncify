@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings
 
+from pathlib import Path
+
 
 class Settings(BaseSettings):
     # PostgreSQL
@@ -24,7 +26,7 @@ class Settings(BaseSettings):
     REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
 
     class Config:
-        env_file = ".env"
+        env_file = Path(__file__).resolve().parent.parent.parent / ".env"
 
     def get_database_url(self):
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"

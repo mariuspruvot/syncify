@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
+from backend.models.base import BaseModel
 
 friends_association = Table(
     "friends_association",
