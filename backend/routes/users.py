@@ -8,6 +8,8 @@ from backend.schemas.users import UserCreate, UserUpdate, UserList, UserResponse
 from backend.config.database import SessionLocal, get_db
 import logging
 
+from backend.utils.exceptions import EmailAlreadyExistsError, UserAlreadyExistsError, \
+    PasswordNotStrongEnoughError
 from backend.utils.validation.users import UserValidator
 
 logger = logging.getLogger("USERS")
@@ -42,8 +44,8 @@ def create_user(
 
     except HTTPException as he:
         raise he
-    except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
+    except (EmailAlreadyExistsError, UserAlreadyExistsError, PasswordNotStrongEnoughError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
