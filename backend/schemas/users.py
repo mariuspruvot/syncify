@@ -14,6 +14,7 @@ class UserBase(BaseModel):
     spotify_id: str | None = None
     is_online: bool = False
     currently_playing: str | None = None
+    token: str | None = None
 
     @classmethod
     @field_validator("email")
@@ -39,7 +40,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     spotify_id: str | None = Field(None, min_length=5)
-    password: str = Field(..., min_length=8, max_length=50)
+    password_hash: str = Field(..., min_length=8, max_length=50)
 
     @classmethod
     @field_validator("password")
@@ -61,10 +62,10 @@ class UserUpdate(BaseModel):
     currently_playing: Optional[str] = None
 
 
-class UserResponse(UserBase):
+class UserInApp(UserBase):
     id: str | None = None
     spotify_id: str | None = None
-    friends: List["UserResponse"] | None = None
+    friends: List["UserInApp"] | None = None
 
     class Config:
         orm_mode = True
@@ -72,7 +73,7 @@ class UserResponse(UserBase):
 
 class UserList(BaseModel):
     total: int
-    users: list[UserResponse]
+    users: list[UserInApp]
 
     class Config:
         orm_mode = True

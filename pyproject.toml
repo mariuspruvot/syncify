@@ -25,6 +25,7 @@ bcrypt = "^4.2.0"
 sqlalchemy-stubs = "^0.4"
 redis = "^5.1.1"
 spotipy = "^2.24.0"
+pyjwt = "^2.9.0"
 
 
 [build-system]

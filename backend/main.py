@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from typing import AsyncIterator
+
+from backend.routes.app_auth import app_auth_router
 from backend.utils.redis.redis_config import RedisConfig
 from contextlib import asynccontextmanager
 import uvicorn
@@ -31,6 +33,8 @@ app = FastAPI(
 )
 app.include_router(spotify_router, prefix="/spotify")
 app.include_router(users_router, prefix="/users")
+
+app.include_router(app_auth_router, prefix="/app-auth")
 
 app.add_middleware(
     CORSMiddleware,

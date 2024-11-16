@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     REDIS_DB: int = 0
     REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
 
+    # JWT
+    JWT_SECRET_KEY: str
+
     class Config:
         env_file = Path(__file__).resolve().parent.parent.parent / ".env"
 

@@ -2,8 +2,10 @@ from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import uuid
+import bcrypt
 from backend.models.base import BaseModel
 
+# Friends association table
 friends_association = Table(
     "friends_association",
     BaseModel.metadata,
@@ -24,7 +26,9 @@ class User(BaseModel):
     is_online = Column(Boolean, default=False)
     currently_playing = Column(String(255), nullable=True)
 
-    # Relations
+    password_hash = Column(String(255), nullable=False)
+
+    # Relationships
     friends = relationship(
         "User",
         secondary=friends_association,
@@ -35,3 +39,20 @@ class User(BaseModel):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def set_password(self, password: str) -> None:
+        """
+        Hashes the user's password with bcrypt and stores it in the password_hash field.
+        """
+        salt = bcrypt.gensalt()
+        hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
+        self.password_hash = hashed_password.decode("utf-8")
+        return None
+
+    def check_password(self, password: str) -> bool:
+        """
+        Checks if the given password matches the stored hashed password.
+        """
+        return bcrypt.checkpw(
+            password.encode("utf-8"), self.password_hash.encode("utf-8")
+        )

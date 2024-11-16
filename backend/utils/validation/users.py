@@ -1,7 +1,10 @@
 from backend.repositories.user_repository import UserRepository
 from backend.schemas.users import UserCreate
-from backend.utils.exceptions import EmailAlreadyExistsError, UserAlreadyExistsError, \
-    PasswordNotStrongEnoughError
+from backend.utils.exceptions import (
+    EmailAlreadyExistsError,
+    UserAlreadyExistsError,
+    PasswordNotStrongEnoughError,
+)
 
 
 class UserValidator:
@@ -11,7 +14,7 @@ class UserValidator:
     def validate(self, user: UserCreate) -> bool:
         self._validate_email(user.email)
         self._validate_display_name(user.display_name)
-        self._validate_password(user.password)
+        self._validate_password(user.password_hash)
         return True
 
     def _validate_email(self, email: str) -> bool:
@@ -27,9 +30,15 @@ class UserValidator:
     @staticmethod
     def _validate_password(password: str) -> bool:
         if not any(c.isupper() for c in password):
-            raise PasswordNotStrongEnoughError("Password must contain at least one uppercase letter")
+            raise PasswordNotStrongEnoughError(
+                "Password must contain at least one uppercase letter"
+            )
         if not any(c.islower() for c in password):
-            raise PasswordNotStrongEnoughError("Password must contain at least one lowercase letter")
+            raise PasswordNotStrongEnoughError(
+                "Password must contain at least one lowercase letter"
+            )
         if not any(c.isdigit() for c in password):
-            raise PasswordNotStrongEnoughError("Password must contain at least one digit")
+            raise PasswordNotStrongEnoughError(
+                "Password must contain at least one digit"
+            )
         return True

@@ -2,7 +2,7 @@ from backend.factory.user_factory import UserFactory
 from backend.models.users import User
 from backend.repositories.base_repository import AbstractRepository
 from backend.config.database import SessionLocal
-from backend.schemas.users import UserCreate, UserResponse
+from backend.schemas.users import UserCreate
 
 
 class UserRepository(AbstractRepository[User, str]):
@@ -12,6 +12,7 @@ class UserRepository(AbstractRepository[User, str]):
     def create(self, instance: UserCreate) -> User:
         try:
             user = UserFactory.from_create(instance)
+
             self.db.add(user)
             self.db.commit()
             self.db.refresh(user)
