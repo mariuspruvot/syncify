@@ -76,4 +76,4 @@ function toggleMute() {
 .range::-webkit-slider-thumb {
   cursor: pointer;
 }
-</style>
+</style>-

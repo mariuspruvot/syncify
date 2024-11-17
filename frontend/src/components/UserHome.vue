@@ -18,7 +18,7 @@
           <!-- Spotify Player Section -->
           <div class="w-full card bg-base-100 shadow-xl mb-8">
             <div class="card-body">
-              <h2 class="card-title text-spotify-green text-xl mb-4">Music Player</h2>
+              <h2 class="card-title text-spotify-green text-xl mb-4">My Player</h2>
               <SpotifyPlayer
                 v-if="!isLoading && spotifyToken"
                 :token="spotifyToken"
@@ -303,9 +303,17 @@ function showToast(type: "success" | "error" | "info", message: string) {
 }
 
 // Data Fetching
-async function fetchUser() {
+async function fetchUser(token: string) {
   try {
-    const response = await fetch("http://localhost:8000/me");
+    const url = `http://localhost:8000/spotify/user?token=${encodeURIComponent(token)}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
     console.log("User response:", response.status);
     if (response.ok) {
       user.value = await response.json();
@@ -318,6 +326,7 @@ async function fetchUser() {
   }
 }
 
+
 async function fetchUserStats() {
   try {
     const response = await fetch("http://localhost:8000/me/stats");
@@ -326,7 +335,7 @@ async function fetchUserStats() {
       userStats.value = await response.json();
       console.log("Stats data:", userStats.value);
     } else {
-      throw new Error("Failed to fetch user stats");
+     userStats.value = null; // Set to null if the request fails
     }
   } catch (e) {
     console.error("Fetch stats error:", e);
@@ -373,7 +382,7 @@ onMounted(async () => {
   try {
     isLoading.value = true;
     await Promise.all([
-      fetchUser(),
+      fetchUser(localStorage.getItem("spotify_token") || ""),
       fetchUserStats(),
       fetchRecentSessions(),
       fetchSpotifyToken(),
