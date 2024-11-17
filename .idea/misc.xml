@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="Poetry (Syncify)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Poetry (Syncify)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.12.7 Docker Compose (syncify-backend)" project-jdk-type="Python SDK" />
 </project>

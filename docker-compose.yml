@@ -2,17 +2,20 @@
 services:
   syncify-backend:
     build:
-      context: .
-      dockerfile: backend/Dockerfile
+      context: ./backend
+      dockerfile: Dockerfile
     volumes:
       - .:/app
+      - /app/.venv
     ports:
-      - "8000:8000"
+      - "8001:8000"
     depends_on:
       - db
     environment:
       DATABASE_URL: postgres://postgres:password@db:5432/syncify-db
-    command: poetry run uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    env_file:
+      - backend/.env
+    command: uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
 
 
   syncify-frontend:
@@ -36,16 +39,14 @@ services:
   db:
     image: postgres:14
     restart: always
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     expose:
       - "5432"
+    env_file:
+      - backend/.env
 
 volumes:
   postgres_data:
