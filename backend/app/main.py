@@ -3,29 +3,25 @@ from typing import AsyncIterator
 
 from backend.app.routes.spotify import spotify_router
 from backend.app.routes.users import users_router
-from backend.app.config.logging import logger, LOGGING_CONFIG
 
 from contextlib import asynccontextmanager
 from backend.app.utils.redis.redis_config import RedisConfig
-import logging.config
 import uvicorn
 
 from fastapi.middleware.cors import CORSMiddleware
 
-import logging
+from backend.app.config.logging import LOGGER
 
-
-logging.config.dictConfig(LOGGING_CONFIG)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
-    logger.info("Startup")
+    LOGGER.info("Startup")
     RedisConfig().init_connection()
 
     yield
     RedisConfig().close_connection()
-    logger.info("Shutdown")
+    LOGGER.info("Shutdown")
 
 
 app = FastAPI(
