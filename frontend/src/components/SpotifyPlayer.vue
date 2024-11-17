@@ -68,7 +68,6 @@
     <div v-else class="text-center py-4">
       <span class="loading loading-spinner loading-lg"></span>
       <p class="mt-2">Connecting to Spotify...</p>
-      <p class="text-sm mt-2">Token: {{ storedToken ? 'Present' : 'Missing' }}</p>
     </div>
  
     <!-- Error Toast -->

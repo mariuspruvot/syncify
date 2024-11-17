@@ -39,7 +39,6 @@
         localStorage.setItem('spotify_expires_at', data.token.expires_in.toString())
         localStorage.setItem('spotify_token_type', data.token.token_type)
 
-        
         router.push('/home')
       } else {
         throw new Error(data.error || 'Failed to get token')
