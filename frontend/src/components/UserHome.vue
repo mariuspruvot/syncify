@@ -8,17 +8,24 @@
     <!-- Main Content -->
     <div v-else class="container mx-auto p-8">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <!-- Left Column: User Profile -->
-        <div class="lg:col-span-1">
+        <!-- Left Column: User Profile & Friends -->
+        <div class="lg:col-span-1 flex flex-col gap-8">
+          <!-- User Profile -->
           <UserProfile :user="user" :stats="userStats" />
+          
+          <!-- Friends List -->
+          <FriendsList />
         </div>
  
-        <!-- Middle Column -->
-        <div class="lg:col-span-2 flex flex-col">
+        <!-- Right Column: Player & Activity -->
+        <div class="lg:col-span-2 flex flex-col gap-8">
           <!-- Spotify Player Section -->
-          <div class="w-full card bg-base-100 shadow-xl mb-8">
+          <div class="w-full card bg-base-100 shadow-xl">
             <div class="card-body">
-              <h2 class="card-title text-spotify-green text-xl mb-4">My Player</h2>
+              <div class="flex justify-between items-center">
+                <h2 class="card-title text-spotify-green text-xl">Now Playing</h2>
+                <div class="badge badge-primary">LIVE</div>
+              </div>
               <SpotifyPlayer
                 v-if="!isLoading && spotifyToken"
                 :token="spotifyToken"
@@ -32,56 +39,35 @@
               </div>
             </div>
           </div>
- 
-          <!-- Active Session -->
-          <div class="w-full card bg-base-100 shadow-xl mb-8">
+
+          <!-- Listening Activity -->
+          <div class="w-full card bg-base-100 shadow-xl">
             <div class="card-body">
-              <div class="flex justify-between items-center mb-4">
-                <h2 class="card-title text-spotify-green text-xl">
-                  {{ currentSession?.name || "No Active Session" }}
-                  <div v-if="currentSession" class="badge badge-secondary">
-                    LIVE
-                  </div>
-                </h2>
-                <div v-if="currentSession" class="dropdown dropdown-end">
-                  <label tabindex="0" class="btn btn-ghost btn-circle">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                    </svg>
-                  </label>
-                  <ul tabindex="0" class="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52">
-                    <li><a @click="copySessionCode">Copy Session Code</a></li>
-                    <li><a @click="() => handleLeaveSession()">Leave Session</a></li>
-                    <li v-if="isHost"><a class="text-error" @click="endSession">End Session</a></li>
-                  </ul>
+              <h2 class="card-title text-spotify-green text-xl mb-4">
+                Friend Activity
+              </h2>
+              <div class="space-y-4">
+                <!-- We'll add friend activity here later -->
+                <div class="text-center py-4 text-base-content/70">
+                  See what your friends are listening to
                 </div>
-              </div>
- 
-              <div v-if="currentSession" class="space-y-6">
-                <SessionParticipants :participants="currentSession.participants" />
-              </div>
-              <div v-else class="text-center py-8 text-base-content/70">
-                Create or join a session to start listening with friends
               </div>
             </div>
           </div>
- 
-          <!-- Session Actions -->
-          <div class="w-full max-w-2xl mx-auto mb-8">
-            <SessionActions
-              @create-session="createSession"
-              @join-session="joinSession"
-            />
-          </div>
- 
-          <!-- Recent Sessions -->
-          <div class="w-full">
-            <RecentSessions
-              :sessions="recentSessions"
-              @join-session="joinExistingSession"
-              @leave-session="handleLeaveSession"
-              @delete-session="deleteSession"
-            />
+
+          <!-- Recently Played Together -->
+          <div class="w-full card bg-base-100 shadow-xl">
+            <div class="card-body">
+              <h2 class="card-title text-spotify-green text-xl mb-4">
+                Recently Played Together
+              </h2>
+              <div class="space-y-4">
+                <!-- We'll add shared listening history here -->
+                <div class="text-center py-4 text-base-content/70">
+                  No recent shared sessions
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -94,199 +80,26 @@
       </div>
     </div>
   </div>
- </template>
+</template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
-import type { Session, User, UserStats } from "~/types";
+import { ref, onMounted } from "vue";
+import type { User, UserStats } from "~/types";
 import SpotifyPlayer from "~/components/SpotifyPlayer.vue";
-import SessionParticipants from "~/components/SessionParticipants.vue";
-import SessionActions from "~/components/SessionActions.vue";
-import RecentSessions from "~/components/RecentSessions.vue";
+import UserProfile from "./UserProfile.vue";
+import FriendsList from "./FriendsList.vue";
 
 // State
-const isLoading = ref(true);
-const user = ref<User | null>(null);
+const isLoading = ref(false);
+const user = ref<User | null>(null); 
 const userStats = ref<UserStats | null>(null);
-const currentSession = ref<Session | null>(null);
-const recentSessions = ref<Session[]>([]);
 const spotifyToken = ref("");
 const toast = ref<{
   type: "info" | "success" | "error";
   message: string;
 } | null>(null);
 
-// Computed
-const isHost = computed(() => {
-  return currentSession.value?.hostId === user.value?.id;
-});
 
-// Session Management Functions
-async function copySessionCode() {
-  if (currentSession.value?.code) {
-    try {
-      await navigator.clipboard.writeText(currentSession.value.code);
-      showToast("success", "Session code copied to clipboard");
-    } catch (e) {
-      showToast("error", "Failed to copy session code");
-    }
-  }
-}
-
-async function handleLeaveSession(sessionId?: string) {
-  const id = sessionId || currentSession.value?.id;
-  if (!id) return;
-
-  try {
-    const response = await fetch(`http://localhost:8000/sessions/${id}/leave`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.ok) {
-      if (id === currentSession.value?.id) {
-        currentSession.value = null;
-      }
-      await fetchRecentSessions();
-      showToast("success", "Left session successfully");
-    } else {
-      throw new Error("Failed to leave session");
-    }
-  } catch (e) {
-    console.error("Leave session error:", e);
-    showToast("error", "Failed to leave session");
-  }
-}
-
-async function createSession(data: {
-  name: string;
-  privacy: "public" | "private";
-}) {
-  try {
-    console.log("Creating session with data:", data);
-    const response = await fetch("http://localhost:8000/sessions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    console.log("Response status:", response.status);
-    const responseData = await response.json();
-    console.log("Response data:", responseData);
-
-    if (response.ok) {
-      currentSession.value = responseData;
-      await fetchRecentSessions();
-      showToast("success", "Session created successfully");
-    } else {
-      throw new Error(responseData.message || "Failed to create session");
-    }
-  } catch (e) {
-    console.error("Create session error:", e);
-    showToast("error", "Failed to create session");
-  }
-}
-
-async function endSession() {
-  if (!currentSession.value?.id) return;
-
-  try {
-    const response = await fetch(
-      `http://localhost:8000/sessions/${currentSession.value.id}`,
-      {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.ok) {
-      currentSession.value = null;
-      await fetchRecentSessions();
-      showToast("success", "Session ended successfully");
-    } else {
-      throw new Error("Failed to end session");
-    }
-  } catch (e) {
-    console.error("End session error:", e);
-    showToast("error", "Failed to end session");
-  }
-}
-
-async function joinSession(data: { code: string }) {
-  try {
-    console.log("Joining session with code:", data.code);
-    const response = await fetch(`http://localhost:8000/sessions/join`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    });
-
-    if (response.ok) {
-      const session = await response.json();
-      currentSession.value = session;
-      showToast("success", "Joined session successfully");
-    } else {
-      throw new Error("Failed to join session");
-    }
-  } catch (e) {
-    console.error("Join session error:", e);
-    showToast("error", "Failed to join session");
-  }
-}
-
-async function joinExistingSession(sessionId: string) {
-  try {
-    const response = await fetch(
-      `http://localhost:8000/sessions/${sessionId}/join`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.ok) {
-      const session = await response.json();
-      currentSession.value = session;
-      showToast("success", "Joined session successfully");
-    } else {
-      throw new Error("Failed to join existing session");
-    }
-  } catch (e) {
-    console.error("Join existing session error:", e);
-    showToast("error", "Failed to join session");
-  }
-}
-
-async function deleteSession(sessionId: string) {
-  try {
-    const response = await fetch(`http://localhost:8000/sessions/${sessionId}`, {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.ok) {
-      await fetchRecentSessions();
-      showToast("success", "Session deleted successfully");
-    } else {
-      throw new Error("Failed to delete session");
-    }
-  } catch (e) {
-    console.error("Delete session error:", e);
-    showToast("error", "Failed to delete session");
-  }
-}
 
 // Error Handling
 function handlePlayerError(error: Error) {
@@ -303,57 +116,61 @@ function showToast(type: "success" | "error" | "info", message: string) {
 }
 
 // Data Fetching
-async function fetchUser(token: string) {
+async function initializeUser() {
   try {
-    const url = `http://localhost:8000/spotify/user?token=${encodeURIComponent(token)}`;
+    const spotifyToken = localStorage.getItem('spotify_token');
+    
+    if (!spotifyToken) {
+      throw new Error('No Spotify token found');
+    }
 
-    const response = await fetch(url, {
-      method: "GET",
+    // Ajoutons un log ici pour voir la structure des données
+    const spotifyUserResponse = await fetch(`http://localhost:8000/spotify/user?token=${spotifyToken}`);
+    if (!spotifyUserResponse.ok) {
+      throw new Error('Failed to fetch Spotify user data');
+    }
+
+    const spotifyUserData = await spotifyUserResponse.json();
+    console.log('Spotify User Data:', spotifyUserData);
+
+    try {
+      const verifyResponse = await fetch(`http://localhost:8000/app-auth/verify/${spotifyUserData.id}`);
+      if (verifyResponse.ok) {
+        const userData = await verifyResponse.json();
+        localStorage.setItem('user_id', userData.id);
+        return userData;
+      }
+    } catch (error) {
+      console.warn('User verification failed, proceeding with registration');
+    }
+
+    // Si l'utilisateur n'existe pas, l'enregistrer
+    const registerResponse = await fetch('http://localhost:8000/app-auth/register', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        spotify_id: spotifyUserData.id,
+        email: spotifyUserData.email,
+        display_name: spotifyUserData.display_name,
+        avatar: spotifyUserData.images?.[0]?.url || null,
+        country: spotifyUserData.country,
+      }),
     });
 
-    console.log("User response:", response.status);
-    if (response.ok) {
-      user.value = await response.json();
-      console.log("User data:", user.value);
-    } else {
-      throw new Error("Failed to fetch user");
+    if (!registerResponse.ok) {
+      throw new Error('Failed to register user');
     }
-  } catch (e) {
-    console.error("Fetch user error:", e);
-  }
-}
 
+    const registeredUser = await registerResponse.json();
+    localStorage.setItem('user_id', registeredUser.id);
+    return registeredUser;
 
-async function fetchUserStats() {
-  try {
-    const response = await fetch("http://localhost:8000/me/stats");
-    console.log("Stats response:", response.status);
-    if (response.ok) {
-      userStats.value = await response.json();
-      console.log("Stats data:", userStats.value);
-    } else {
-     userStats.value = null; // Set to null if the request fails
-    }
-  } catch (e) {
-    console.error("Fetch stats error:", e);
-  }
-}
-
-async function fetchRecentSessions() {
-  try {
-    const response = await fetch("http://localhost:8000/sessions/recent");
-    console.log("Recent sessions response:", response.status);
-    if (response.ok) {
-      recentSessions.value = await response.json();
-      console.log("Recent sessions data:", recentSessions.value);
-    } else {
-      throw new Error("Failed to fetch recent sessions");
-    }
-  } catch (e) {
-    console.error("Fetch recent sessions error:", e);
+  } catch (error) {
+    console.error('Failed to initialize user:', error);
+    showToast('error', 'Failed to initialize user');
+    throw error;
   }
 }
 
@@ -381,15 +198,15 @@ async function fetchSpotifyToken() {
 onMounted(async () => {
   try {
     isLoading.value = true;
-    await Promise.all([
-      fetchUser(localStorage.getItem("spotify_token") || ""),
-      fetchUserStats(),
-      fetchRecentSessions(),
-      fetchSpotifyToken(),
-    ]);
-  } catch (e) {
-    console.error("Initial data load error:", e);
-    showToast("error", "Failed to load some data");
+    const userData = await initializeUser();
+    console.log('User Data:', userData);
+    user.value = userData;
+    
+    if (userData) {
+      await fetchSpotifyToken();
+    }
+  } catch (error) {
+    console.error('Initialization error:', error);
   } finally {
     isLoading.value = false;
   }

@@ -1,15 +1,17 @@
 // src/types/index.ts
-export interface Image {
-    url: string | null
-    width: number | null
-    height: number | null
-}
-
 export interface User {
     id: string
     country: string | null
-    displayName: string
-    images: Image[]
+    email: string
+    display_name: string
+    isOnline?: boolean
+    avatar: string | null
+    currentlyPlaying?: {
+        track: string
+        artist: string
+        startedAt: number
+        uri: string
+    }
 }
 
 export interface UserStats {
@@ -35,3 +37,11 @@ export interface Session {
     startTime: string
     duration: number
 }
+
+export interface Friend {
+    id: string;
+    name: string;
+    avatar: string;
+    isOnline: boolean;
+    currentlyPlaying?: string;
+  }
