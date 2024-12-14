@@ -1,7 +1,8 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 
+from backend.app.config.logging import LOGGER
 from backend.app.services.spotify_api.auth import SpotifyAuth
 from backend.app.services.spotify_api.schemas.spotify_user import SpotifyUser
 from backend.app.services.spotify_api.user_management.user_manager import UserManager
@@ -36,33 +37,42 @@ def authorize_user(auth: Annotated[SpotifyAuth, Depends(get_spotify_auth)]):
 
 
 @spotify_router.get("/callback", tags=["spotify"], status_code=200)
-def spotify_callback(
-    code: str,
-    auth: Annotated[SpotifyAuth, Depends(get_spotify_auth)],
+async def spotify_callback(
     redis: Annotated[RedisConfig, Depends()],
+    authorization: str = Header(None),
 ):
     """
-    Retrieves the access token from the authorization code.
+    Retrieves the access token from the frontend. and stores it in redis with the user id.
     """
     try:
-        token = auth.retrieve_token(code)
-        redis.set_key("spotify_token", token.access_token)
+        if not authorization:
+            raise HTTPException(status_code=401, detail="No authorization header")
 
-        return {"token": token}
+        token = authorization.replace("Bearer ", "")
+
+        if not token:
+            raise HTTPException(status_code=401, detail="No token found")
+
+        current_user = await UserManager(token).get_current_user()
+
+        redis.set_key(f"spotify_token:{current_user.id}", token)
+
+        return {"status": "ok", "user": current_user}
 
     except ValueError as err:
         raise HTTPException(status_code=401, detail=str(err))
 
     except Exception as err:
+        LOGGER.error(f"Error during Spotify callback: {err}")
         raise HTTPException(
             status_code=500, detail=f"Error during Spotify callback: {err}"
         )
 
 
 @spotify_router.get("/token", tags=["spotify"])
-def get_token(redis: Annotated[RedisConfig, Depends()]):
+def get_token(user_id: str, redis: Annotated[RedisConfig, Depends()]):
     try:
-        token = redis.get_key("spotify_token")
+        token = redis.get_key(f"spotify_token:{user_id}")
         if token:
             return {"status": "ok", "token": token}
 

@@ -13,7 +13,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.config.logging import LOGGER
 
 
-
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     LOGGER.info("Startup")

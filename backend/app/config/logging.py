@@ -10,14 +10,14 @@ LOGGING_CONFIG = {
             "()": "colorlog.ColoredFormatter",
             "format": "%(log_color)s%(levelname)-8s%(reset)s %(blue)s%(asctime)s%(reset)s %(cyan)s[%(name)s]%(reset)s %(message)s",
             "log_colors": {
-                'DEBUG': 'cyan',
-                'INFO': 'green,bold',
-                'WARNING': 'yellow,bold',
-                'ERROR': 'red,bold',
-                'CRITICAL': 'red,bg_white,bold',
+                "DEBUG": "cyan",
+                "INFO": "green,bold",
+                "WARNING": "yellow,bold",
+                "ERROR": "red,bold",
+                "CRITICAL": "red,bg_white,bold",
             },
             "secondary_log_colors": {},
-            "style": '%'
+            "style": "%",
         },
     },
     "handlers": {
@@ -50,7 +50,6 @@ LOGGING_CONFIG = {
             "handlers": ["console"],
             "propagate": False,
         },
-
         "backend": {"level": "INFO", "handlers": ["console"], "propagate": False},
         "fastapi": {"level": "INFO", "handlers": ["console"], "propagate": False},
     },

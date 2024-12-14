@@ -1,25 +1,25 @@
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select, func
-from backend.app.repositories.user_repository import UserRepository
-from backend.app.models.users import (
-    User,
-    UserOut,
-    UserCreate,
-    UserUpdate,
-    PaginatedUsers,
-)
 from math import ceil
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import Session, func, select
+
 from backend.app.config.database import get_db
-from backend.app.utils.validation.users import UserValidator
+from backend.app.config.logging import LOGGER
+from backend.app.models.users import (
+    PaginatedUsers,
+    User,
+    UserCreate,
+    UserOut,
+    UserUpdate,
+)
+from backend.app.repositories.user_repository import UserRepository
 from backend.app.utils.exceptions import (
     EmailAlreadyExistsError,
-    UserAlreadyExistsError,
     PasswordNotStrongEnoughError,
+    UserAlreadyExistsError,
 )
-import logging
-
-logger = logging.getLogger("USERS")
+from backend.app.utils.validation.users import UserValidator
 
 users_router = APIRouter()
 
@@ -47,6 +47,7 @@ def create_user(
     Raises:
         HTTPException: If email exists or validation fails
     """
+    LOGGER.error(f"Creating user with data: {user_data}")
     try:
         user_repository = UserRepository(db)
 
@@ -58,7 +59,6 @@ def create_user(
         if user_repository.get_by_email(user_data.email):
             raise HTTPException(status_code=400, detail="Email already registered")
 
-        # Create user and return sanitized data
         user = user_repository.create(user_data.model_dump())
         return UserOut.from_user(user)
 
@@ -71,7 +71,7 @@ def create_user(
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Error creating user: {str(e)}")
+        LOGGER.error(f"Error creating user: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -107,7 +107,7 @@ def get_users(
             pages=ceil(total / per_page),
         )
     except Exception as e:
-        logger.error(f"Error getting users: {str(e)}")
+        LOGGER.error(f"Error getting users: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -137,7 +137,7 @@ def get_user(username: str, db: Annotated[Session, Depends(get_db)]) -> UserOut:
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Error getting user: {str(e)}")
+        LOGGER.error(f"Error getting user: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -178,7 +178,7 @@ def update_user(
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Error updating user: {str(e)}")
+        LOGGER.error(f"Error updating user: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -201,7 +201,7 @@ def delete_user(user_id: str, db: Annotated[Session, Depends(get_db)]) -> None:
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Error deleting user: {str(e)}")
+        LOGGER.error(f"Error deleting user: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -230,7 +230,7 @@ def add_friend(
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Error adding friend: {str(e)}")
+        LOGGER.error(f"Error adding friend: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -256,5 +256,5 @@ def remove_friend(
     except HTTPException as he:
         raise he
     except Exception as e:
-        logger.error(f"Error removing friend: {str(e)}")
+        LOGGER.error(f"Error removing friend: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
